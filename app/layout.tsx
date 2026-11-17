@@ -2,6 +2,8 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import ScrollRevealObserver from './scroll-reveal'
+import ServiceWorkerCleanup from './service-worker-cleanup'
+import QueryProvider from './query-provider'
 
 export const metadata: Metadata = {
   title: 'The SourDough Bakery — Good bread takes time',
@@ -43,8 +45,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
+        <ServiceWorkerCleanup />
         <ScrollRevealObserver />
-        {children}
+        <QueryProvider>{children}</QueryProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

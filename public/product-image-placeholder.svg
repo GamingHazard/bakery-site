@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" role="img" aria-labelledby="title description">
+  <title id="title">Product photo coming soon</title>
+  <desc id="description">A warm bakery-themed placeholder for a product without a photo.</desc>
+  <rect width="800" height="800" fill="#f3eadc"/>
+  <circle cx="400" cy="340" r="176" fill="#e9dcc8"/>
+  <path d="M230 393c7-100 76-166 170-166s163 66 170 166l-34 75H264z" fill="#c69a67"/>
+  <path d="M279 392c12-72 56-118 121-118s109 46 121 118" fill="none" stroke="#f3eadc" stroke-linecap="round" stroke-width="16"/>
+  <path d="M309 344l38 23m47-87 5 45m61-20-25 39" fill="none" stroke="#9e7047" stroke-linecap="round" stroke-width="12"/>
+  <path d="M277 470h246" stroke="#a9875f" stroke-linecap="round" stroke-width="5"/>
+  <text x="400" y="574" fill="#6f6252" font-family="Arial, sans-serif" font-size="24" letter-spacing="5" text-anchor="middle">PHOTO COMING SOON</text>
+</svg>
