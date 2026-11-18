@@ -18,6 +18,12 @@ The shop renders every active, published product family returned by the catalog,
 
 The bag stores backend variant IDs in browser local storage under `sourdough-bag-v2`. Previous mock-catalog bags are cleared because their product IDs cannot be mapped safely to backend variants. Checkout validates customer details, simulates order creation, and stores a demo confirmation under `sourdough-last-order`; it clears the bag and routes to `/confirmation`. No real payment processing, order persistence, or form delivery is configured.
 
-## Demo-only forms
+## Website communications and newsletter
 
-The checkout, contact/custom-order forms, and newsletter signup remain demonstrations and do not send or persist requests. Do not treat the website as an order channel until guest/customer identity, server-side order validation, durable order persistence, verified business contact information, and payment/fulfilment workflows have been implemented.
+The contact and custom-order forms submit to the bakery server and are stored in the shared communications inbox. Custom orders remain enquiries: they are not confirmed sales or orders until staff review availability, pricing, and timing and use the bakery order workflow. A submitted message receives a reference and an acknowledgement email when Resend is configured.
+
+Newsletter signup uses explicit consent and double opt-in. The address is added to the marketing audience only after the recipient verifies it. Subscribers can unsubscribe from a confirmation page, and the administration workspace can suspend, unsubscribe, or delete subscriber records. Campaigns are restricted to verified, active subscribers synchronized with the configured Resend segment.
+
+Configure `BAKERY_API_URL` in the website server environment to the bakery server origin and configure the Resend sender, webhook, token secret, and newsletter segment values on the backend. The storefront proxies form requests through same-origin Next.js routes; no Resend API secret is exposed to the browser. Domain DNS/MX records must be configured separately by the operator before inbound email works.
+
+Checkout remains a demonstration. It does not create an order, process payment, or send purchase/order confirmation emails.

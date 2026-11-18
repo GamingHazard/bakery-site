@@ -1,0 +1,73 @@
+.newsletter-lifecycle-page {
+  display: grid;
+  min-height: 62vh;
+  place-items: center;
+  padding: 72px 24px;
+}
+
+.newsletter-lifecycle-card {
+  width: min(100%, 620px);
+  padding: clamp(28px, 6vw, 56px);
+  border: 1px solid var(--border);
+  background: #fff;
+  box-shadow: 0 18px 55px rgb(48 35 29 / 8%);
+}
+
+.newsletter-lifecycle-card h1 {
+  max-width: 520px;
+  margin: 12px 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(34px, 6vw, 54px);
+  font-weight: 400;
+  line-height: 1.12;
+}
+
+.newsletter-lifecycle-card > p {
+  max-width: 500px;
+  margin: 0 0 26px;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.newsletter-unsubscribe-action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.newsletter-back-link {
+  display: inline-block;
+  margin-top: 20px;
+  color: var(--olive);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.form-success-message {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--olive);
+}
+
+.newsletter-consent {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.newsletter-consent input {
+  flex: 0 0 auto;
+  margin-top: 3px;
+  accent-color: var(--olive);
+}
+
+.communication-reference {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  background: var(--ivory);
+}

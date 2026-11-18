@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
@@ -216,9 +216,86 @@ function StoryPage(){return <><section className="inner-hero story-hero"><img sr
 function EnquiryForm({custom=false,contacts}:{custom?:boolean;contacts:StorefrontSettings['contacts']}) {
  const [sent,setSent]=useState(false)
  const [busy,setBusy]=useState(false)
+ const [error,setError]=useState('')
+ const [reference,setReference]=useState('')
+ const submissionKey=useRef('')
+ const [form,setForm]=useState({name:'',email:'',phone:'',orderType:'',requestedProducts:'',estimatedQuantity:'',preferredDate:'',fulfillment:'Collection',message:''})
  const hasContacts=Boolean(contacts.phone||contacts.email||contacts.address)
- const submit=async(e:React.FormEvent<HTMLFormElement>)=>{e.preventDefault();setBusy(true);await new Promise(r=>setTimeout(r,800));setBusy(false);setSent(true)}
- return <section className="enquiry-page"><div className="enquiry-intro"><span className="eyebrow">{custom?'MADE FOR YOUR MOMENT':'WE WOULD LOVE TO HEAR FROM YOU'}</span><h1>{custom?<>A little something <em>extraordinary.</em></>:<>Let&apos;s <em>talk.</em></>}</h1><p>{custom?'From celebrations to a table full of bread, tell us what you are dreaming up. Our team will follow up to discuss the details.':'Questions about an order, a loaf, or what is fresh today? Leave us a note and we will be in touch.'}</p>{!custom&&hasContacts&&<div className="contact-details">{contacts.phone&&<a href={`tel:${encodeURIComponent(contacts.phone)}`}>Phone · {contacts.phone}</a>}{contacts.email&&<a href={`mailto:${encodeURIComponent(contacts.email)}`}>Email · {contacts.email}</a>}{contacts.address&&<span>Address · {contacts.address}</span>}</div>}</div>{sent?<div className="form-success"><span className="success-mark"><Check/></span><h2>Thank you for reaching out.</h2><p>This demo form has been submitted locally. No message was sent to the bakery.</p><ButtonLink href="/">Back to home</ButtonLink></div>:<form className="enquiry-form" onSubmit={submit}><span className="eyebrow">{custom?'TELL US A LITTLE MORE':'SEND A NOTE'}</span><h2>{custom?'Your idea, our favourite kind of brief.':'How can we help?'}</h2><label>Your name<input required placeholder="Your name"/></label><div className="form-grid"><label>Email<input required type="email" placeholder="you@example.com"/></label><label>Phone<input type="tel" placeholder="+256"/></label></div>{custom&&<><label>Order type<select required defaultValue=""><option value="" disabled>Select an occasion</option>{['Birthday orders','Weddings & celebrations','Corporate orders','Events & catering','Bulk bread orders','Other'].map(x=><option key={x}>{x}</option>)}</select></label><label>What would you like?<input required placeholder="Products or ideas"/></label><div className="form-grid"><label>Estimated quantity<input type="number" min="1" placeholder="For how many?"/></label><label>Preferred date<input type="date"/></label></div><label>Collection or delivery<select><option>Collection</option><option>Delivery</option></select></label></>}<label>{custom?'Additional requirements':'Your message'}<textarea required rows={5} placeholder="Write your message here…"/></label><button className="button button-dark" disabled={busy}>{busy?'Sending…':custom?'Send your enquiry':'Send message'}<ArrowRight size={16}/></button><small>Demo form only. Your message is not stored or sent.</small></form>}</section>
+ const update=(key:keyof typeof form,value:string)=>setForm(current=>({...current,[key]:value}))
+ const submit=async(e:React.FormEvent<HTMLFormElement>)=>{
+  e.preventDefault()
+  setBusy(true)
+  setError('')
+  if(!submissionKey.current) submissionKey.current=crypto.randomUUID()
+  const payload={
+   name:form.name,
+   email:form.email,
+   phone:form.phone,
+   subject:custom?'Custom-order enquiry':'Website contact',
+   message:form.message,
+   ...(custom?{
+    orderType:form.orderType,
+    requestedProducts:form.requestedProducts,
+    estimatedQuantity:form.estimatedQuantity,
+    preferredDate:form.preferredDate,
+    fulfillment:form.fulfillment,
+    requirements:form.message,
+   }:{}),
+  }
+  try{
+   const response=await fetch(custom?'/api/storefront/messages/custom-orders':'/api/storefront/messages/contact',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Idempotency-Key':submissionKey.current},
+    body:JSON.stringify(payload),
+   })
+   const result:unknown=await response.json()
+   if(!response.ok||!result||typeof result!=='object'){
+    const reason=result&&typeof result==='object'&&'error'in result&&typeof result.error==='string'?result.error:'We could not send your message. Please try again.'
+    throw new Error(reason)
+   }
+   const responseReference='reference'in result&&typeof result.reference==='string'?result.reference:''
+   setReference(responseReference)
+   setSent(true)
+   submissionKey.current=''
+  }catch(reason){
+   setError(reason instanceof Error?reason.message:'We could not send your message. Please try again.')
+  }finally{
+   setBusy(false)
+  }
+ }
+ return <section className="enquiry-page"><div className="enquiry-intro"><span className="eyebrow">{custom?'MADE FOR YOUR MOMENT':'WE WOULD LOVE TO HEAR FROM YOU'}</span><h1>{custom?<>A little something <em>extraordinary.</em></>:<>Let&apos;s <em>talk.</em></>}</h1><p>{custom?'From celebrations to a table full of bread, tell us what you are dreaming up. Our team will follow up to discuss the details.':'Questions about an order, a loaf, or what is fresh today? Leave us a note and we will be in touch.'}</p>{!custom&&hasContacts&&<div className="contact-details">{contacts.phone&&<a href={`tel:${encodeURIComponent(contacts.phone)}`}>Phone · {contacts.phone}</a>}{contacts.email&&<a href={`mailto:${encodeURIComponent(contacts.email)}`}>Email · {contacts.email}</a>}{contacts.address&&<span>Address · {contacts.address}</span>}</div>}</div>{sent?<div className="form-success"><span className="success-mark"><Check/></span><h2>{custom?'Your enquiry is in our inbox.':'Thank you for reaching out.'}</h2><p>{custom?'This is an enquiry, not a confirmed order. Our team will review your details and follow up to discuss availability, pricing, and timing.':'Your message has been received. Our team will follow up using the email address you provided.'}</p>{reference&&<p className="communication-reference">Reference <strong>{reference}</strong></p>}<ButtonLink href="/">Back to home</ButtonLink></div>:<form className="enquiry-form" onSubmit={submit}><span className="eyebrow">{custom?'TELL US A LITTLE MORE':'SEND A NOTE'}</span><h2>{custom?'Your idea, our favourite kind of brief.':'How can we help?'}</h2><label>Your name<input required maxLength={180} value={form.name} onChange={e=>update('name',e.target.value)} placeholder="Your name"/></label><div className="form-grid"><label>Email<input required type="email" maxLength={254} value={form.email} onChange={e=>update('email',e.target.value)} placeholder="you@example.com"/></label><label>Phone<input type="tel" maxLength={40} value={form.phone} onChange={e=>update('phone',e.target.value)} placeholder="+256"/></label></div>{custom&&<><label>Order type<select required value={form.orderType} onChange={e=>update('orderType',e.target.value)}><option value="" disabled>Select an occasion</option>{['Birthday orders','Weddings & celebrations','Corporate orders','Events & catering','Bulk bread orders','Other'].map(x=><option key={x}>{x}</option>)}</select></label><label>What would you like?<input required maxLength={1000} value={form.requestedProducts} onChange={e=>update('requestedProducts',e.target.value)} placeholder="Products or ideas"/></label><div className="form-grid"><label>Estimated quantity<input type="number" min="1" step="1" value={form.estimatedQuantity} onChange={e=>update('estimatedQuantity',e.target.value)} placeholder="For how many?"/></label><label>Preferred date<input type="date" value={form.preferredDate} onChange={e=>update('preferredDate',e.target.value)}/></label></div><label>Collection or delivery<select value={form.fulfillment} onChange={e=>update('fulfillment',e.target.value)}><option>Collection</option><option>Delivery</option></select></label></>}<label>{custom?'Additional requirements':'Your message'}<textarea required maxLength={10000} rows={5} value={form.message} onChange={e=>update('message',e.target.value)} placeholder="Write your message here…"/></label>{error&&<p className="form-error" role="alert">{error}</p>}<button className="button button-dark" disabled={busy}>{busy?'Sending…':custom?'Send your enquiry':'Send message'}<ArrowRight size={16}/></button><small>{custom?'Your details will be saved as an enquiry, not an order.':'Your message will be sent securely to the bakery team.'}</small></form>}</section>
 }
-function Newsletter(){const [email,setEmail]=useState('');const [status,setStatus]=useState('');return <section className="newsletter"><div><span className="eyebrow">A NOTE FROM THE BAKERY</span><h2>A little good in your <em>inbox.</em></h2><p>Fresh bakes, small news, and reasons to gather.</p></div><form onSubmit={async e=>{e.preventDefault();setStatus('Thank you — this demo signup was received.');setEmail('')}}><label className="sr-only" htmlFor="newsletter-email">Email address</label><input id="newsletter-email" type="email" required placeholder="Your email address" value={email} onChange={e=>setEmail(e.target.value)}/><button type="submit" aria-label="Subscribe to newsletter"><ArrowRight/></button>{status&&<span className="newsletter-status" role="status">{status}</span>}</form></section>}
+function Newsletter(){
+ const [email,setEmail]=useState('')
+ const [consent,setConsent]=useState(false)
+ const [status,setStatus]=useState('')
+ const [error,setError]=useState('')
+ const [busy,setBusy]=useState(false)
+ const submit=async(e:React.FormEvent<HTMLFormElement>)=>{
+  e.preventDefault()
+  setBusy(true)
+  setError('')
+  setStatus('')
+  try{
+   const response=await fetch('/api/storefront/newsletter/subscribe',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({email,consent}),
+   })
+   const result:unknown=await response.json()
+   if(!response.ok||!result||typeof result!=='object'){
+    const reason=result&&typeof result==='object'&&'error'in result&&typeof result.error==='string'?result.error:'We could not submit your subscription. Please try again.'
+    throw new Error(reason)
+   }
+   setStatus('If this address can be subscribed, you will receive an email with a verification link.')
+   setEmail('')
+   setConsent(false)
+  }catch(reason){
+   setError(reason instanceof Error?reason.message:'We could not submit your subscription. Please try again.')
+  }finally{
+   setBusy(false)
+  }
+ }
+ return <section className="newsletter"><div><span className="eyebrow">A NOTE FROM THE BAKERY</span><h2>A little good in your <em>inbox.</em></h2><p>Fresh bakes, small news, and reasons to gather.</p></div><form onSubmit={submit}><label className="sr-only" htmlFor="newsletter-email">Email address</label><input id="newsletter-email" type="email" required maxLength={254} placeholder="Your email address" value={email} onChange={e=>setEmail(e.target.value)}/><button type="submit" aria-label="Subscribe to newsletter" disabled={busy}>{busy?'…':<ArrowRight/>}</button><label className="newsletter-consent"><input type="checkbox" required checked={consent} onChange={e=>setConsent(e.target.checked)}/><span>I agree to receive occasional bakery news and offers. I can unsubscribe at any time.</span></label>{status&&<span className="newsletter-status" role="status">{status}</span>}{error&&<span className="newsletter-status form-error" role="alert">{error}</span>}</form></section>
+}
 function NotFound(){return <div className="empty-state"><h1>That bake is out of the oven.</h1><p>We couldn&apos;t find this page, but there are plenty more good things.</p><ButtonLink href="/shop">Visit the shop</ButtonLink></div>}
